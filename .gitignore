@@ -159,3 +159,11 @@ cython_debug/
 #.idea/
 
 # End of https://www.toptal.com/developers/gitignore/api/python
+
+# log and dataset
+Dataset
+result
+wandb
+my_logs/
+logs/
+settings.json
