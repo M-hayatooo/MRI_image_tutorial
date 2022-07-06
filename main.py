@@ -32,7 +32,7 @@ def parser():
     # CNN or CAE or VAE
     parser.add_argument("--model", type=str, default="CNN")
     parser.add_argument("--batch_size", type=int, default=16)
-    parser.add_argument("--epoch", type=int, default=200)
+    parser.add_argument("--epoch", type=int, default=100)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--log", type=str, default="output")
     parser.add_argument("--n_train", type=float, default=0.8)
