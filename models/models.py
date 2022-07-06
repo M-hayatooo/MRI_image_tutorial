@@ -69,6 +69,197 @@ class Decoder(nn.Module):
         return x
 
 
+class LuckyNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.pool = nn.AvgPool3d(2, 2)
+        self.conv1 = nn.Conv3d(1, 3, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv3d(3,  3, 3, padding=1)
+        self.conv3 = nn.Conv3d(3, 32, 3, padding=1)
+        self.conv4 = nn.Conv3d(32, 32, 3, padding=1)
+        self.fc1 = nn.Linear(10 * 12 * 10 * 32, 512)
+        self.fc2 = nn.Linear(512, 2)
+
+        self.dropout = nn.Dropout(p=0.25)
+        self.batchnorm3d1 = nn.BatchNorm3d(3)
+        self.batchnorm3d2 = nn.BatchNorm3d(3)
+        self.batchnorm3d3 = nn.BatchNorm3d(32)
+        self.batchnorm3d4 = nn.BatchNorm3d(32)
+        self.batchnorm3d5 = nn.BatchNorm3d(64)
+        self.batchnorm3d6 = nn.BatchNorm3d(64)
+        self.batchnorm1d = nn.BatchNorm1d(512)
+
+    def forward(self, x):                             #  80 × 96 × 80 = 614,400 
+        x = self.pool(x)#                             #                          {1 × 80 × 96 × 80} ⇒ {1 × 40 × 48 × 40}
+        x = F.relu(self.batchnorm3d1(self.conv1(x)))  # 1channel → 3channels  ## {1 × 40 × 48 × 40} ⇒ {3 × 40 × 48 × 40}
+        x = F.relu(self.batchnorm3d2(self.conv2(x)))  # 3channels→ 3channels  ## {3 × 40 × 48 × 40} ⇒ {3 × 40 × 48 × 40}
+        x = self.pool(x)
+        x = F.relu(self.batchnorm3d3(self.conv3(x)))  #                       ## {3 × 20 × 24 × 20} ⇒{32 × 20 × 24 × 20}
+        x = F.relu(self.batchnorm3d4(self.conv4(x)))  #                       ## {32 × 20 × 24 × 20} ⇒{32 × 20 × 24 × 20}
+        x = self.pool(x)#                             #  64 × 10 × 12 × 10 
+        x = x.view(-1, 10 * 12 * 10 * 32) #     10 * 12 * 10 * 32 = 38,400
+        x = self.dropout(x)
+        x = F.relu(self.batchnorm1d(self.fc1(x)))             #        # {32 × 10 × 12 × 10 = 38,400} ⇒ {512}
+        x = self.dropout(x)
+        x = self.fc2(x)                     #          { 512 } ⇒ { 2 } 2クラス分類
+        return x
+
+
+class LuckyNet1(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.pool = nn.AvgPool3d(2, 2)
+        self.conv1 = nn.Conv3d(1,  3, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv3d(3,   3, 3, padding=1)
+        self.conv3 = nn.Conv3d(3,  32, 3, padding=1)
+        self.conv4 = nn.Conv3d(32, 32, 3, padding=1)
+        self.fc1 = nn.Linear(10 * 12 * 10 * 32, 512)
+        self.fc2 = nn.Linear(512, 2)
+
+        self.dropout = nn.Dropout(p=0.25)
+        self.batchnorm3d1 = nn.BatchNorm3d(3)
+        self.batchnorm3d2 = nn.BatchNorm3d(3)
+        self.batchnorm3d3 = nn.BatchNorm3d(32)
+        self.batchnorm3d4 = nn.BatchNorm3d(32)
+        self.batchnorm3d5 = nn.BatchNorm3d(32)
+        self.batchnorm3d6 = nn.BatchNorm3d(32)
+        #self.batchnorm1d = nn.BatchNorm1d(512)
+# 畳み込み⇒畳み込み⇒poolだとあんま安定しなかった
+    def forward(self, x):                             #  80 × 96 × 80 = 614,400 
+        x = self.pool(x)#                             #                          {1 × 80 × 96 × 80} ⇒ {1 × 40 × 48 × 40}
+        x = F.relu(self.batchnorm3d1(self.conv1(x)))  # 1channel → 3channels  ## {1 × 40 × 48 × 40} ⇒ {3 × 40 × 48 × 40}
+        x = F.relu(self.batchnorm3d2(self.conv2(x)))  # 3channels→ 3channels  ## {3 × 40 × 48 × 40} ⇒ {3 × 40 × 48 × 40}
+        x = self.pool(x)        
+        x = F.relu(self.batchnorm3d3(self.conv3(x)))  # 1channel → 3channels  ## {3 × 40 × 48 × 40} ⇒ {32 × 40 × 48 × 40}
+        x = F.relu(self.batchnorm3d4(self.conv4(x)))  # 3channels→ 3channels  ## {3 × 40 × 48 × 40} ⇒ {3 × 40 × 48 × 40}
+        x = self.pool(x)
+        x = x.view(-1, 10 * 12 * 10 * 32) #     10 * 12 * 10 * 32 = 38,400
+        x = self.dropout(x)
+        x = F.relu(self.fc1(x))             #        # {32 × 10 × 12 × 10 = 38,400} ⇒ {512}
+        x = self.dropout(x)
+        x = self.fc2(x)                     #          { 512 } ⇒ { 2 } 2クラス分類
+        return x
+
+
+class LuckyNet2(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.pool = nn.AvgPool3d(2, 2)
+        self.conv1 = nn.Conv3d(1, 3, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv3d(3,   3, 3, padding=1)
+        self.conv3 = nn.Conv3d(3,  32, 3, padding=1)
+        self.conv4 = nn.Conv3d(32, 64, 3, padding=1)
+        self.fc1 = nn.Linear(10 * 12 * 10 * 64, 4096)
+        self.fc2 = nn.Linear(4096, 512)
+        self.fc3 = nn.Linear(512, 2)
+
+        #self.dropout = nn.Dropout(p=0.2)
+        self.batchnorm3d1 = nn.BatchNorm3d(3)
+        self.batchnorm3d2 = nn.BatchNorm3d(3)
+        self.batchnorm3d3 = nn.BatchNorm3d(32)
+        self.batchnorm3d4 = nn.BatchNorm3d(64)
+        self.batchnorm3d5 = nn.BatchNorm3d(32)
+        self.batchnorm3d6 = nn.BatchNorm3d(32)
+        #self.batchnorm1d = nn.BatchNorm1d(512)
+
+    def forward(self, x):                             #  80 × 96 × 80 = 614,400 
+        x = self.pool(x)#                             #                          {1 × 80 × 96 × 80} ⇒ {1 × 40 × 48 × 40}
+        x = F.relu(self.batchnorm3d1(self.conv1(x)))  # 1channel → 3channels  ## {1 × 40 × 48 × 40} ⇒ {3 × 40 × 48 × 40}
+        x = F.relu(self.batchnorm3d2(self.conv2(x)))  # 3channels→ 3channels  ## {3 × 40 × 48 × 40} ⇒ {3 × 40 × 48 × 40}
+        x = self.pool(x)
+        x = F.relu(self.batchnorm3d3(self.conv3(x)))  #                       ## {3 × 20 × 24 × 20} ⇒{32 × 20 × 24 × 20}
+        x = F.relu(self.batchnorm3d4(self.conv4(x)))  #                       ## {32 × 20 × 24 × 20} ⇒{32 × 20 × 24 × 20}
+        x = self.pool(x)
+        x = x.view(-1, 10 * 12 * 10 * 32) #                                       10 * 12 * 10 * 32 = 38,400
+        x = F.relu(self.fc1(x))             #                                      #  {32 × 10 × 12 × 10 = 38,400} ⇒ {512}
+        x = F.relu(self.fc2(x))             #                                      #  {32 × 10 × 12 × 10 = 38,400} ⇒ {512}
+        x = self.fc3(x)                     #          { 512 } ⇒ { 2 } 2クラス分類
+        return x
+
+
+class LuckyNet3(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.pool = nn.AvgPool3d(2, 2)
+        self.conv1 = nn.Conv3d(1, 3, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv3d(3,   3, 3, padding=1)
+        self.conv3 = nn.Conv3d(3,   3, 3, padding=1)
+        self.conv4 = nn.Conv3d(3,  32, 3, padding=1)
+        self.conv5 = nn.Conv3d(32, 32, 3, padding=1)
+        self.fc1 = nn.Linear(10 * 12 * 10 * 32, 512)
+        self.fc2 = nn.Linear(512, 2)
+
+        #self.dropout = nn.Dropout(p=0.2)
+        self.batchnorm3d1 = nn.BatchNorm3d(3)
+        self.batchnorm3d2 = nn.BatchNorm3d(3)
+        self.batchnorm3d3 = nn.BatchNorm3d(32)
+        self.batchnorm3d4 = nn.BatchNorm3d(32)
+        self.batchnorm3d5 = nn.BatchNorm3d(64)
+        self.batchnorm3d6 = nn.BatchNorm3d(64)
+        self.batchnorm1d = nn.BatchNorm1d(512)
+
+    def forward(self, x):                             #  80 × 96 × 80 = 614,400 
+        x = self.pool(x)#                             #                               {1 × 80 × 96 × 80} ⇒ {1 × 40 × 48 × 40}
+        x1 = F.relu(self.batchnorm3d1(self.conv1(x)))  #     1channel → 3channels  ## {1 × 40 × 48 × 40} ⇒ {3 × 40 × 48 × 40}
+        x = F.relu(self.batchnorm3d2(self.conv2(x + x1)))  # 3channels→ 3channels  ## {3 × 40 × 48 × 40} ⇒ {3 × 40 × 48 × 40}
+        x = self.pool(x)#                             #                            ## {3 × 40 × 48 × 40} ⇒ {3 × 20 × 24 × 20}
+        x1 = F.relu(self.batchnorm3d3(self.conv3(x)))  #                           ## {3 × 20 × 24 × 20} ⇒{32 × 20 × 24 × 20}
+        x = F.relu(self.batchnorm3d4(self.conv4(x + x1)))  #                       ## {32 × 20 × 24 × 20} ⇒{32 × 20 × 24 × 20}
+        x = self.pool(x)#                                                          #  64 × 10 × 12 × 10 
+        x = x.view(-1, 10 * 12 * 10 * 32) #                                           10 * 12 * 10 * 32 = 38,400
+        #x = self.dropout(x)
+        x = F.relu(self.batchnorm1d(self.fc1(x)))             #                                      #  {32 × 10 × 12 × 10 = 38,400} ⇒ {512}
+        #x = self.dropout(x)
+        x = self.fc2(x)                     #          { 512 } ⇒ { 2 } 2クラス分類
+        return x
+
+
+class LuckyNet4(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.pool = nn.AvgPool3d(2, 2)
+        self.conv1 = nn.Conv3d(1,  3, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv3d(3,   3, 3, padding=1)
+        self.conv3 = nn.Conv3d(3,  32, 3, padding=1)
+        self.conv4 = nn.Conv3d(32, 64, 3, padding=1)
+        self.conv5 = nn.Conv3d(32, 32, 3, padding=1)
+        self.conv6 = nn.Conv3d(32, 32, 3, padding=1)
+        self.fc1 = nn.Linear(10 * 12 * 10 * 32, 512)
+        self.fc2 = nn.Linear(512, 2)
+
+        #self.dropout = nn.Dropout(p=0.2)
+        self.batchnorm3d1 = nn.BatchNorm3d(3)
+        self.batchnorm3d2 = nn.BatchNorm3d(3)
+        self.batchnorm3d3 = nn.BatchNorm3d(32)
+        self.batchnorm3d4 = nn.BatchNorm3d(32)
+        self.batchnorm3d5 = nn.BatchNorm3d(32)
+        self.batchnorm3d6 = nn.BatchNorm3d(32)
+        self.batchnorm3d7 = nn.BatchNorm3d(64)
+        self.batchnorm3d8 = nn.BatchNorm3d(64)
+        #self.batchnorm1d = nn.BatchNorm1d(512)
+# 畳み込み⇒畳み込み⇒poolだとあんま安定しなかった
+    def forward(self, x):                             #  80 × 96 × 80 = 614,400 
+        x = self.pool(x)#                             #                          {1 × 80 × 96 × 80} ⇒ {1 × 40 × 48 × 40}
+        x = F.relu(self.batchnorm3d1(self.conv1(x)))  # 1channel → 3channels  ## {1 × 40 × 48 × 40} ⇒ {3 × 40 × 48 × 40}
+        x = F.relu(self.batchnorm3d2(self.conv2(x)))  # 3channels→ 3channels  ## {3 × 40 × 48 × 40} ⇒ {3 × 40 × 48 × 40}
+        x = self.pool(x)        
+        x = F.relu(self.batchnorm3d3(self.conv3(x)))  # 1channel → 3channels  ## {3 × 40 × 48 × 40} ⇒ {32 × 40 × 48 × 40}
+        x = F.relu(self.batchnorm3d4(self.conv4(x)))  # 3channels→ 3channels  ## {3 × 40 × 48 × 40} ⇒ {3 × 40 × 48 × 40}
+        x = self.pool(x)
+        x = F.relu(self.batchnorm3d5(self.conv5(x)))  #                       ## {3 × 20 × 24 × 20} ⇒{32 × 20 × 24 × 20}
+        x = F.relu(self.batchnorm3d6(self.conv6(x)))  #                       ## {32 × 20 × 24 × 20} ⇒{32 × 20 × 24 × 20}
+        x = self.pool(x)#                             #  64 × 10 × 12 × 10 
+        x = x.view(-1, 10 * 12 * 10 * 32) #     10 * 12 * 10 * 32 = 38,400
+        #x = self.dropout(x)
+        x = F.relu(self.fc1(x))             #        # {32 × 10 × 12 × 10 = 38,400} ⇒ {512}
+        #x = self.dropout(x)
+        x = self.fc2(x)                     #          { 512 } ⇒ { 2 } 2クラス分類
+        return x
+
+
+
+
+
 class FujiNet1(nn.Module):
     def __init__(self):
         super().__init__()
@@ -85,23 +276,92 @@ class FujiNet1(nn.Module):
         self.batchnorm3d12 = nn.BatchNorm3d(3)
         self.batchnorm3d2 = nn.BatchNorm3d(32)
         self.batchnorm3d3 = nn.BatchNorm3d(64)
-        self.batchnorm1 = nn.BatchNorm1d(512)
+    #    self.batchnorm1 = nn.BatchNorm1d(512)
 
     def forward(self, x):
-        x = self.pool(x)#                              # 40 × 48 × 40
+        x = self.pool(x)
         x = F.relu(self.batchnorm3d1(self.conv1(x)))
         x = F.relu(self.batchnorm3d12(self.conv2(x)))
-        x = self.pool(x)#                              # 20 × 24 × 20
+        x = self.pool(x)
         x = F.relu(self.batchnorm3d2(self.conv3(x)))
         x = F.relu(self.batchnorm3d3(self.conv4(x)))
-        x = self.pool(x)#                              # 10 × 12 × 10
+        x = self.pool(x)
         x = x.view(-1, 10 * 12 * 10 * 64)
         x = self.dropout(x)
-        x = F.relu(self.fc1(x)) # 
+        x = F.relu(self.fc1(x))
         x = self.dropout(x)
         x = self.fc2(x)
         return x
 
+
+
+class FujiNet2(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.pool = nn.MaxPool3d(2, 2)
+        self.conv1 = nn.Conv3d(1, 3, 3, padding=1)
+        self.conv2 = nn.Conv3d(3, 3, 3, padding=1)
+        self.conv3 = nn.Conv3d(3, 32, 3, padding=1)
+        self.conv4 = nn.Conv3d(32, 64, 3, padding=1)
+        self.fc1 = nn.Linear(10 * 12 * 10 * 64, 512)
+        self.fc2 = nn.Linear(512, 2)
+
+        self.dropout = nn.Dropout(p=0.25)
+        self.batchnorm3d1 = nn.BatchNorm3d(3)
+        self.batchnorm3d12 = nn.BatchNorm3d(3)
+        self.batchnorm3d2 = nn.BatchNorm3d(32)
+        self.batchnorm3d3 = nn.BatchNorm3d(64)
+    #    self.batchnorm1 = nn.BatchNorm1d(512)
+
+    def forward(self, x):
+        x = self.pool(x)
+        x = F.relu(self.batchnorm3d1(self.conv1(x)))
+        x = F.relu(self.batchnorm3d12(self.conv2(x)))
+        x = self.pool(x)
+        x = F.relu(self.batchnorm3d2(self.conv3(x)))
+        x = F.relu(self.batchnorm3d3(self.conv4(x)))
+        x = self.pool(x)
+        x = x.view(-1, 10 * 12 * 10 * 64)
+        x = self.dropout(x)
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return x
+
+    
+class FujiNet_avg(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.pool = nn.AvgPool3d(2, 2)
+        self.conv1 = nn.Conv3d(1, 3, 3, padding=1)
+        self.conv2 = nn.Conv3d(3, 3, 3, padding=1)
+        self.conv3 = nn.Conv3d(3, 32, 3, padding=1)
+        self.conv4 = nn.Conv3d(32, 64, 3, padding=1)
+        self.fc1 = nn.Linear(10 * 12 * 10 * 64, 512)
+        self.fc2 = nn.Linear(512, 2)
+
+        #self.dropout = nn.Dropout(p=0.25)
+        self.batchnorm3d1 = nn.BatchNorm3d(3)
+        self.batchnorm3d12 = nn.BatchNorm3d(3)
+        self.batchnorm3d2 = nn.BatchNorm3d(32)
+        self.batchnorm3d3 = nn.BatchNorm3d(64)
+    #    self.batchnorm1 = nn.BatchNorm1d(512)
+
+    def forward(self, x):
+        x = self.pool(x)
+        x = F.relu(self.batchnorm3d1(self.conv1(x)))
+        x = F.relu(self.batchnorm3d12(self.conv2(x)))
+        x = self.pool(x)
+        x = F.relu(self.batchnorm3d2(self.conv3(x)))
+        x = F.relu(self.batchnorm3d3(self.conv4(x)))
+        x = self.pool(x)
+        x = x.view(-1, 10 * 12 * 10 * 64)
+        #x = self.dropout(x)
+        x = F.relu(self.fc1(x))
+        #x = self.dropout(x)
+        x = self.fc2(x)
+        return x
+    
 
 class Cae(nn.Module):
     def __init__(self):
@@ -265,8 +525,7 @@ class CAE3(nn.Module):
         self.KER_N = 27
         self.KETS_N = 1
         # Encoder
-        self.conv1 = nn.Conv3d(
-            1, self.KER_N, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv3d(1, self.KER_N, kernel_size=3, stride=1, padding=1)
         self.pool1 = nn.AvgPool3d(2, 2)
         self.conv2 = nn.Conv3d(self.KER_N, self.KER_N, 3, 1, 1)
         self.pool2 = nn.AvgPool3d(2, 2)
